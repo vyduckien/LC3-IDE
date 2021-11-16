@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     QFont font = ui->textEdit->font();
     font.setPointSize(15);
     font.setFamily("Times New Roman");
-    ui->textEdit->setFont(font);    //set font sized
+    ui->textEdit->setFont(font);    //set font size
 }
 
 
