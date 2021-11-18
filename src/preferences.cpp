@@ -1,4 +1,4 @@
-#include "preferences.h"
+#include "include/preferences.h"
 #include "ui_preferences.h"
 
 Preferences::Preferences(QWidget *parent) :
@@ -11,6 +11,7 @@ Preferences::Preferences(QWidget *parent) :
 //        ui->comboBox->addItem(QString::number(i) + "gay");
 //    }
 //    ui->comboBox->addItem("gay");
+//    connect();
 }
 
 Preferences::~Preferences()

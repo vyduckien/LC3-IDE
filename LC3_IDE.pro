@@ -11,17 +11,22 @@ CONFIG += c++11
 
 VPATH += ./src  ./include
 SOURCES += \
+    codeeditor.cpp \
     preferences.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    textbox.cpp
 
 HEADERS += \
+    codeeditor.h \
     mainwindow.h \
-    preferences.h
+    preferences.h \
+    textbox.h
 
 FORMS += \
     mainwindow.ui \
-    preferences.ui
+    preferences.ui \
+    textbox.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -12,7 +12,17 @@
 #include <QFont>
 #include <QShortcut>
 #include <QKeySequence>
-#include "preferences.h"
+#include <QCloseEvent>
+#include <QDesktopServices>
+#include <QProcess>
+#include <QDebug>
+#include <QPlainTextEdit>
+#include <QSize>
+#include <QTextBlock>
+
+#include "include/preferences.h"
+#include "include/textbox.h"
+#include "include/codeeditor.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -25,6 +35,13 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+    /* Comment line using Ctrl + / shortcut */
+    void commentShortcut();
+
+
+public slots:
+
 
 private slots:
     void on_actionNew_triggered();
@@ -49,14 +66,20 @@ private slots:
 
     void on_actionPreferences_triggered();
 
-    /* Comment line using Ctrl + / shortcut */
-    void commentShortcut();
+    void on_actionAssemble_triggered();
 
+    void closeEvent(QCloseEvent *event);
 
 private:
     Ui::MainWindow *ui;
     QString currentFile = "";
     Preferences* Prefs;
-    QShortcut *shortcut;
+    QShortcut *comment;
+    QShortcut *untab;
+    QFont font;
+    textbox* text;
+    QMessageBox msgBox;
+    CodeEditor* textTest;
 };
+
 #endif // MAINWINDOW_H

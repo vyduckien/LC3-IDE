@@ -18,6 +18,7 @@ public:
 
 private:
     Ui::Preferences *ui;
+
 };
 
 #endif // PREFERENCES_H

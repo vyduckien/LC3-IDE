@@ -2,35 +2,33 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>681</width>
-    <height>420</height>
+    <width>1069</width>
+    <height>543</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTextEdit" name="textEdit">
-    <property name="geometry">
-     <rect>
-      <x>50</x>
-      <y>10</y>
-      <width>551</width>
-      <height>331</height>
-     </rect>
-    </property>
-   </widget>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QPlainTextEdit" name="plainTextEdit"/>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>681</width>
+     <width>1069</width>
      <height>20</height>
     </rect>
    </property>
@@ -58,6 +56,7 @@
     <property name="title">
      <string>Execute</string>
     </property>
+    <addaction name="actionAssemble"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -92,6 +91,8 @@
    <addaction name="actionNew"/>
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
+   <addaction name="actionUndo"/>
+   <addaction name="actionRedo"/>
   </widget>
   <action name="actionNew">
    <property name="icon">
@@ -217,6 +218,11 @@
   <action name="actionPreferences">
    <property name="text">
     <string>Preferences</string>
+   </property>
+  </action>
+  <action name="actionAssemble">
+   <property name="text">
+    <string>Assemble</string>
    </property>
   </action>
  </widget>
