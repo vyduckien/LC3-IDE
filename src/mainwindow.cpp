@@ -3,6 +3,7 @@
 #include "include/preferences.h"
 #include "include/textbox.h"
 #include "include/codeeditor.h"
+#include "include/highlighter.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -10,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     textTest = new CodeEditor(ui->plainTextEdit);
+    highlighter = new Highlighter(textTest->document());
     this->setCentralWidget(textTest);
     comment = new QShortcut(QKeySequence("Ctrl+/"), this);
     untab = new QShortcut(QKeySequence("Shift+Tab"), this);
@@ -17,11 +19,10 @@ MainWindow::MainWindow(QWidget *parent)
            this, &MainWindow::commentShortcut);
     font = textTest->font();
     font.setPointSize(15);
-    font.setFamily("Calibri");
+    font.setFamily("Consolas");
     textTest->setFont(font);    //set font size
     ui->actionAssemble->setDisabled(true);  //Temporarily disable assembler when no file is present
 
-//    QObject::connect(ui->textEdit, &QTextEdit::textChanged, this, &MainWindow::on_actionSave_triggered);
 }
 
 
@@ -29,7 +30,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     msgBox.setText("The document has been modified.");
     msgBox.setInformativeText("Do you want to save your changes?");
-    msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    msgBox.setStandardButtons(QMessageBox::Save |
+                              QMessageBox::Discard | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Save);
     if (textTest->document()->isModified())
     {
@@ -78,21 +80,25 @@ void MainWindow::commentShortcut()
     cursor.insertText(";");
 }
 
+
 void MainWindow::on_actionNew_triggered()
 {
     currentFile.clear();
     textTest->document()->setPlainText(QString());
 }
 
+
 void MainWindow::on_actionOpen_triggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Open A File..."/*,"",".asm files (*.asm)"*/);
+    QString fileName = QFileDialog::getOpenFileName(this, "Open A File...","",
+                                                    ".asm files (*.asm)");
     QFile file(fileName);
     currentFile = fileName;
     qDebug() << currentFile;
     if (!file.open(QIODevice::ReadOnly | QFile::Text))
     {
-        QMessageBox::warning(this, "Warning", "Can't open file: " + file.errorString());
+        QMessageBox::warning(this, "Warning",
+                             "Can't open file: " + file.errorString());
         return;
     }
     setWindowTitle(fileName);
@@ -100,6 +106,7 @@ void MainWindow::on_actionOpen_triggered()
     QString text = in.readAll();
     textTest->document()->setPlainText(text);
     ui->actionAssemble->setDisabled(true);  //Re-enable assembler
+    textTest->document()->setModified(false);
     file.close();
 }
 
@@ -118,9 +125,13 @@ void MainWindow::on_actionSave_triggered()
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QFile::Text))
     {
-        QMessageBox::warning(this, "Warning", "Can't save file: " + file.errorString());
+        QMessageBox::warning(this, "Warning",
+                             "Can't save file: " + file.errorString());
         return;
     }
+
+    //shows a message on sucessful save in the status barfor 2 seconds
+    ui->statusbar->showMessage("Saved sucessfully.", 2000);
     setWindowTitle(fileName);
     QTextStream out(&file);
     QString text = textTest->toPlainText();
@@ -136,7 +147,8 @@ void MainWindow::on_actionSave_As_triggered()
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QFile::Text))
     {
-        QMessageBox::warning(this, "Warning", "Can't save file: " + file.errorString());
+        QMessageBox::warning(this, "Warning",
+                             "Can't save file: " + file.errorString());
         return;
     }
     currentFile = fileName;
@@ -182,15 +194,16 @@ void MainWindow::on_actionDark_Mode_toggled()
 {
     QPalette p = textTest->palette();
     // Enable dark mode
+    qDebug() << ui->actionDark_Mode->isChecked();
     if (ui->actionDark_Mode->isChecked())
     {
-        p.setColor(QPalette::Base, Qt::black);
-        p.setColor(QPalette::Text, Qt::red);
+        p.setColor(QPalette::Base, QColor(47, 47, 64));
+        p.setColor(QPalette::Text, Qt::white);
         textTest->setPalette(p);
     }
     else
     {
-        p.setColor(QPalette::Base, Qt::white);
+        p.setColor(QPalette::Base, QColor(247, 235, 235));
         p.setColor(QPalette::Text, Qt::black);
         textTest->setPalette(p);
     }
@@ -205,12 +218,6 @@ void MainWindow::on_actionPreferences_triggered()
 
 void MainWindow::on_actionAssemble_triggered()
 {
-//    QDesktopServices::openUrl(QUrl("file:///D:/Steam/steam.exe",
-//                                   QUrl::TolerantMode));
-//    QProcess process;
-//    process.setWorkingDirectory("C:/Windows/System32");
-//    process.start("cmd", QStringList() << "laser -a" + currentFile);
-//    process.start("C:/Windows/System32/cmd.exe");
     QProcess *process = new QProcess;
     process->start("laser", QStringList() << "-a" << currentFile);
     process->waitForFinished();

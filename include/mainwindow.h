@@ -23,6 +23,7 @@
 #include "include/preferences.h"
 #include "include/textbox.h"
 #include "include/codeeditor.h"
+#include "include/highlighter.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -80,6 +81,7 @@ private:
     textbox* text;
     QMessageBox msgBox;
     CodeEditor* textTest;
+    Highlighter *highlighter;
 };
 
 #endif // MAINWINDOW_H
