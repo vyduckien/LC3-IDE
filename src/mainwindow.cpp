@@ -4,14 +4,20 @@
 #include "include/textbox.h"
 #include "include/codeeditor.h"
 #include "include/highlighter.h"
+#include "include/about.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    appName = "LC3 IDE";
     ui->setupUi(this);
+    setWindowTitle(appName);
     textTest = new CodeEditor(ui->plainTextEdit);
-    highlighter = new Highlighter(textTest->document());
+    connect(this, &MainWindow::backgroundChanged,
+            textTest, &CodeEditor::highlightCurrentLine);
+
+    highlighter = new Highlighter(textTest->document());    //syntax highlighting
     this->setCentralWidget(textTest);
     comment = new QShortcut(QKeySequence("Ctrl+/"), this);
     untab = new QShortcut(QKeySequence("Shift+Tab"), this);
@@ -19,10 +25,18 @@ MainWindow::MainWindow(QWidget *parent)
            this, &MainWindow::commentShortcut);
     font = textTest->font();
     font.setPointSize(15);
-    font.setFamily("Consolas");
+    font.setFamily("Courier New");
+    font.setStyleHint(QFont::Monospace);
+    font.setWeight(QFont::Medium);
     textTest->setFont(font);    //set font size
-    ui->actionAssemble->setDisabled(true);  //Temporarily disable assembler when no file is present
+    //Temporarily disable assembler when no file is present
+    ui->actionAssemble->setDisabled(true);
+}
 
+
+MainWindow::~MainWindow()
+{
+    delete ui;
 }
 
 
@@ -40,28 +54,22 @@ void MainWindow::closeEvent(QCloseEvent *event)
         switch (ret)
         {
           case QMessageBox::Save:
-              // Save was clicked
+            //Save was clicked
               MainWindow::on_actionSave_As_triggered();
               break;
           case QMessageBox::Discard:
-                // Don't Save was clicked
+            //Don't Save was clicked
                 event->accept();
               break;
           case QMessageBox::Cancel:
-                // Cancel was clicked
+            //Cancel was clicked
                 event->ignore();
               break;
           default:
-              // should never be reached
+            // should never be reached
               break;
         }
     }
-}
-
-
-MainWindow::~MainWindow()
-{
-    delete ui;
 }
 
 
@@ -71,14 +79,6 @@ MainWindow::~MainWindow()
 //    cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
 //    cursor.insertText(";");
 //}
-
-
-void MainWindow::commentShortcut()
-{
-    QTextCursor cursor = textTest->textCursor();    //current cursor position
-    cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-    cursor.insertText(";");
-}
 
 
 void MainWindow::on_actionNew_triggered()
@@ -101,7 +101,8 @@ void MainWindow::on_actionOpen_triggered()
                              "Can't open file: " + file.errorString());
         return;
     }
-    setWindowTitle(fileName);
+    QString test = appName + " - " + fileName;
+    setWindowTitle(test);
     QTextStream in(&file);
     QString text = in.readAll();
     textTest->document()->setPlainText(text);
@@ -192,21 +193,10 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionDark_Mode_toggled()
 {
-    QPalette p = textTest->palette();
-    // Enable dark mode
-    qDebug() << ui->actionDark_Mode->isChecked();
-    if (ui->actionDark_Mode->isChecked())
-    {
-        p.setColor(QPalette::Base, QColor(47, 47, 64));
-        p.setColor(QPalette::Text, Qt::white);
-        textTest->setPalette(p);
-    }
-    else
-    {
-        p.setColor(QPalette::Base, QColor(247, 235, 235));
-        p.setColor(QPalette::Text, Qt::black);
-        textTest->setPalette(p);
-    }
+    darkModeState = ui->actionDark_Mode->isChecked();
+    toggleDarkMode(darkModeState);
+    qDebug() << darkModeState;
+    emit backgroundChanged();
 }
 
 
@@ -216,6 +206,7 @@ void MainWindow::on_actionPreferences_triggered()
     Prefs->show();
 }
 
+
 void MainWindow::on_actionAssemble_triggered()
 {
     QProcess *process = new QProcess;
@@ -223,3 +214,41 @@ void MainWindow::on_actionAssemble_triggered()
     process->waitForFinished();
     delete process;
 }
+
+
+void MainWindow::toggleDarkMode(bool state)
+{
+    QPalette p = textTest->palette();
+    if (state)
+    {
+        //enable dark mode
+        p.setColor(QPalette::Base, QColor(47, 47, 64));
+        p.setColor(QPalette::Text, Qt::white);
+        textTest->setPalette(p);
+    }
+    else
+    {
+        //disable dark mode
+        p.setColor(QPalette::Base, QColor(247, 235, 235));
+        p.setColor(QPalette::Text, Qt::black);
+        textTest->setPalette(p);
+    }
+}
+
+
+void MainWindow::commentShortcut()
+{
+    QTextCursor cursor = textTest->textCursor();    //current cursor position
+    cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+    cursor.insertText(";");
+}
+
+
+
+void MainWindow::on_actionAbout_triggered()
+{
+    about = new About(this);
+    about->setModal(true);
+    about->show();
+}
+

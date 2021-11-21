@@ -9,7 +9,7 @@ Highlighter::Highlighter(QTextDocument *parent)
     //arithmetic opcodes (Type A):
     //AND, OR, NOT, ADD,LD, LDR, LEA, ST, STR
     opcodeFormat.setForeground(QColor(68, 113, 201));   //dark blue
-    opcodeFormat.setFontWeight(QFont::DemiBold);
+    opcodeFormat.setFontWeight(QFont::Bold);
     const QString opcodesTypeA[] = {
         QStringLiteral("\\bAND\\b"), QStringLiteral("\\bOR\\b"), QStringLiteral("\\bNOT\\b"),
         QStringLiteral("\\bADD\\b"), QStringLiteral("\\bLD\\b"), QStringLiteral("\\bLDR\\b"),
@@ -27,7 +27,7 @@ Highlighter::Highlighter(QTextDocument *parent)
     //input/output opcodes (Type B):
     //BR, JSR, JMP, RET, HALT, IN, GETC, PUTS, OUT
     opcodeFormat.setForeground(QColor(164, 77, 196));  //purple
-    opcodeFormat.setFontWeight(QFont::DemiBold);
+    opcodeFormat.setFontWeight(QFont::Bold);
     const QString opcodesTypeB[] = {
         QStringLiteral("\\bJSR\\b"), QStringLiteral("\\bJMP\\b"), QStringLiteral("\\bRET\\b"),
         QStringLiteral("\\bHALT\\b"),QStringLiteral("\\bIN\\b"), QStringLiteral("\\bGETC\\b"),
@@ -62,26 +62,31 @@ Highlighter::Highlighter(QTextDocument *parent)
 
     //highlighting rule for register: R0 - R7
     registerFormat.setForeground(QColor(40, 138, 199, 255));    //light blue
-    registerFormat.setFontWeight(QFont::Normal);
+    registerFormat.setFontWeight(QFont::Medium);
     rule.pattern = QRegularExpression(QStringLiteral("\\bR[0-7]+\\b"));
     rule.format = registerFormat;
     highlightingRules.append(rule);
 
-    //hightlight rule for strings inside double quotes
+    //highlight rule for numerical values
+    valueFormat.setForeground(QColor(114, 161, 122));    //light blue
+    valueFormat.setFontWeight(QFont::Medium);
+    QString hexValue = QStringLiteral("([xX]-?[0-9a-fA-F]+)\\b");
+    QString decValue = QStringLiteral("(#|\\t|\\s)-?[0-9]+\\b");
+    rule.pattern = QRegularExpression(hexValue);
+    rule.format = valueFormat;
+    highlightingRules.append(rule);
+    rule.pattern = QRegularExpression(decValue);
+    highlightingRules.append(rule);
+
+    //hightlight rule for string literals
     quotationFormat.setForeground(QColor(201, 60, 82, 255));
     rule.pattern = QRegularExpression(QStringLiteral("\".*\""));
     rule.format = quotationFormat;
     highlightingRules.append(rule);
 
-    //highlight rule for numerical values
-    valueFormat.setForeground(QColor(130, 179, 138));    //light blue
-    rule.pattern = QRegularExpression(QStringLiteral("((?i)x|#)[\\w\\-]+"));
-    rule.format = valueFormat;
-    highlightingRules.append(rule);
-
     //highlighting rule for comments
     commentFormat.setForeground(QColor(41, 156, 28, 255));    //set color green
-    commentFormat.setFontWeight(QFont::Light);
+    commentFormat.setFontWeight(QFont::Medium);
     commentFormat.setFontItalic(true);
     rule.pattern = QRegularExpression(QStringLiteral(";[^\n]*"));
     rule.format = commentFormat;

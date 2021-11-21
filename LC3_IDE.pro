@@ -11,6 +11,7 @@ CONFIG += c++11
 
 VPATH += ./src  ./include
 SOURCES += \
+    about.cpp \
     codeeditor.cpp \
     highlighter.cpp \
     preferences.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
     textbox.cpp \
 
 HEADERS += \
+    about.h \
     codeeditor.h \
     highlighter.h \
     mainwindow.h \
@@ -26,6 +28,7 @@ HEADERS += \
     textbox.h \
 
 FORMS += \
+    about.ui \
     mainwindow.ui \
     preferences.ui \
     textbox.ui
