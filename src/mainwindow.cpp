@@ -14,21 +14,30 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle(appName);
     textTest = new CodeEditor(ui->plainTextEdit);
+
+    pref = new Preferences(this);
+    connect(pref, &Preferences::fontChanged,
+            this, &MainWindow::changeFontSize);
+
     connect(this, &MainWindow::backgroundChanged,
             textTest, &CodeEditor::highlightCurrentLine);
 
     highlighter = new Highlighter(textTest->document());    //syntax highlighting
-    this->setCentralWidget(textTest);
+    this->setCentralWidget(textTest);   //expand texbox to the whole area
+
     comment = new QShortcut(QKeySequence("Ctrl+/"), this);
     untab = new QShortcut(QKeySequence("Shift+Tab"), this);
     connect(comment, &QShortcut::activated,
            this, &MainWindow::commentShortcut);
+
+    //default font config
     font = textTest->font();
     font.setPointSize(15);
     font.setFamily("Courier New");
     font.setStyleHint(QFont::Monospace);
     font.setWeight(QFont::Medium);
-    textTest->setFont(font);    //set font size
+    textTest->setFont(font);
+
     //Temporarily disable assembler when no file is present
     ui->actionAssemble->setDisabled(true);
 }
@@ -195,15 +204,15 @@ void MainWindow::on_actionDark_Mode_toggled()
 {
     darkModeState = ui->actionDark_Mode->isChecked();
     toggleDarkMode(darkModeState);
-    qDebug() << darkModeState;
+    qDebug() << "dark mode: " << darkModeState;
     emit backgroundChanged();
 }
 
 
 void MainWindow::on_actionPreferences_triggered()
 {
-    Prefs = new Preferences(this);
-    Prefs->show();
+    pref->setModal(true);
+    pref->show();
 }
 
 
@@ -222,7 +231,7 @@ void MainWindow::toggleDarkMode(bool state)
     if (state)
     {
         //enable dark mode
-        p.setColor(QPalette::Base, QColor(47, 47, 64));
+        p.setColor(QPalette::Base, QColor(29, 29, 38));
         p.setColor(QPalette::Text, Qt::white);
         textTest->setPalette(p);
     }
@@ -240,9 +249,19 @@ void MainWindow::commentShortcut()
 {
     QTextCursor cursor = textTest->textCursor();    //current cursor position
     cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-    cursor.insertText(";");
+    QTextDocument* doc = textTest->document();
+    QTextBlock tb = doc->findBlockByLineNumber(cursor.blockNumber());
+    qDebug() << tb.text().startsWith(";");
+    if (tb.text().startsWith(";"))
+    {
+        cursor.deleteChar();
+    }
+    else
+    {
+        cursor.insertText(";");
+    }
+    qDebug() << cursor.blockNumber();
 }
-
 
 
 void MainWindow::on_actionAbout_triggered()
@@ -250,5 +269,17 @@ void MainWindow::on_actionAbout_triggered()
     about = new About(this);
     about->setModal(true);
     about->show();
+}
+
+
+void MainWindow::changeFontSize(int size, QString fontType)
+{
+    qDebug() <<"received" ;
+    font = textTest->font();
+    font.setPointSize(size);
+    font.setFamily(fontType);
+    font.setStyleHint(QFont::Monospace);
+    font.setWeight(QFont::Medium);
+    textTest->setFont(font);
 }
 

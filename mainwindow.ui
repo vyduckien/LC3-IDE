@@ -81,6 +81,7 @@
     </property>
     <addaction name="actionDark_Mode"/>
     <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>

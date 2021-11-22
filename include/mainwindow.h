@@ -78,10 +78,11 @@ private slots:
 
     void on_actionAbout_triggered();
 
+    void changeFontSize(int size, QString fontType);
+
 private:
     Ui::MainWindow *ui;
     QString currentFile = "";
-    Preferences* Prefs;
     QShortcut *comment;
     QShortcut *untab;
     QFont font;
@@ -91,6 +92,7 @@ private:
     Highlighter *highlighter;
     QString appName;
     About* about;
+    Preferences* pref;
 };
 
 extern bool darkModeState;
