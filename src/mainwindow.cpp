@@ -3,25 +3,49 @@
 #include "include/preferences.h"
 #include "include/textbox.h"
 #include "include/codeeditor.h"
+#include "include/highlighter.h"
+#include "include/about.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    appName = "LC3 IDE";
     ui->setupUi(this);
+    setWindowTitle(appName);
     textTest = new CodeEditor(ui->plainTextEdit);
-    this->setCentralWidget(textTest);
+
+    pref = new Preferences(this);
+    connect(pref, &Preferences::fontChanged,
+            this, &MainWindow::changeFontSize);
+
+    connect(this, &MainWindow::backgroundChanged,
+            textTest, &CodeEditor::highlightCurrentLine);
+
+    highlighter = new Highlighter(textTest->document());    //syntax highlighting
+    this->setCentralWidget(textTest);   //expand texbox to the whole area
+
     comment = new QShortcut(QKeySequence("Ctrl+/"), this);
     untab = new QShortcut(QKeySequence("Shift+Tab"), this);
     connect(comment, &QShortcut::activated,
            this, &MainWindow::commentShortcut);
+
+    //default font config
     font = textTest->font();
     font.setPointSize(15);
-    font.setFamily("Calibri");
-    textTest->setFont(font);    //set font size
-    ui->actionAssemble->setDisabled(true);  //Temporarily disable assembler when no file is present
+    font.setFamily("Courier New");
+    font.setStyleHint(QFont::Monospace);
+    font.setWeight(QFont::Medium);
+    textTest->setFont(font);
 
-//    QObject::connect(ui->textEdit, &QTextEdit::textChanged, this, &MainWindow::on_actionSave_triggered);
+    //Temporarily disable assembler when no file is present
+    ui->actionAssemble->setDisabled(true);
+}
+
+
+MainWindow::~MainWindow()
+{
+    delete ui;
 }
 
 
@@ -29,7 +53,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     msgBox.setText("The document has been modified.");
     msgBox.setInformativeText("Do you want to save your changes?");
-    msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    msgBox.setStandardButtons(QMessageBox::Save |
+                              QMessageBox::Discard | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Save);
     if (textTest->document()->isModified())
     {
@@ -38,28 +63,22 @@ void MainWindow::closeEvent(QCloseEvent *event)
         switch (ret)
         {
           case QMessageBox::Save:
-              // Save was clicked
+            //Save was clicked
               MainWindow::on_actionSave_As_triggered();
               break;
           case QMessageBox::Discard:
-                // Don't Save was clicked
+            //Don't Save was clicked
                 event->accept();
               break;
           case QMessageBox::Cancel:
-                // Cancel was clicked
+            //Cancel was clicked
                 event->ignore();
               break;
           default:
-              // should never be reached
+            // should never be reached
               break;
         }
     }
-}
-
-
-MainWindow::~MainWindow()
-{
-    delete ui;
 }
 
 
@@ -71,35 +90,33 @@ MainWindow::~MainWindow()
 //}
 
 
-void MainWindow::commentShortcut()
-{
-    QTextCursor cursor = textTest->textCursor();    //current cursor position
-    cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-    cursor.insertText(";");
-}
-
 void MainWindow::on_actionNew_triggered()
 {
     currentFile.clear();
     textTest->document()->setPlainText(QString());
 }
 
+
 void MainWindow::on_actionOpen_triggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Open A File..."/*,"",".asm files (*.asm)"*/);
+    QString fileName = QFileDialog::getOpenFileName(this, "Open A File...","",
+                                                    ".asm files (*.asm)");
     QFile file(fileName);
     currentFile = fileName;
     qDebug() << currentFile;
     if (!file.open(QIODevice::ReadOnly | QFile::Text))
     {
-        QMessageBox::warning(this, "Warning", "Can't open file: " + file.errorString());
+        QMessageBox::warning(this, "Warning",
+                             "Can't open file: " + file.errorString());
         return;
     }
-    setWindowTitle(fileName);
+    QString test = appName + " - " + fileName;
+    setWindowTitle(test);
     QTextStream in(&file);
     QString text = in.readAll();
     textTest->document()->setPlainText(text);
     ui->actionAssemble->setDisabled(true);  //Re-enable assembler
+    textTest->document()->setModified(false);
     file.close();
 }
 
@@ -118,9 +135,13 @@ void MainWindow::on_actionSave_triggered()
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QFile::Text))
     {
-        QMessageBox::warning(this, "Warning", "Can't save file: " + file.errorString());
+        QMessageBox::warning(this, "Warning",
+                             "Can't save file: " + file.errorString());
         return;
     }
+
+    //shows a message on sucessful save in the status barfor 2 seconds
+    ui->statusbar->showMessage("Saved sucessfully.", 2000);
     setWindowTitle(fileName);
     QTextStream out(&file);
     QString text = textTest->toPlainText();
@@ -136,7 +157,8 @@ void MainWindow::on_actionSave_As_triggered()
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QFile::Text))
     {
-        QMessageBox::warning(this, "Warning", "Can't save file: " + file.errorString());
+        QMessageBox::warning(this, "Warning",
+                             "Can't save file: " + file.errorString());
         return;
     }
     currentFile = fileName;
@@ -180,39 +202,84 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionDark_Mode_toggled()
 {
+    darkModeState = ui->actionDark_Mode->isChecked();
+    toggleDarkMode(darkModeState);
+    qDebug() << "dark mode: " << darkModeState;
+    emit backgroundChanged();
+}
+
+
+void MainWindow::on_actionPreferences_triggered()
+{
+    pref->setModal(true);
+    pref->show();
+}
+
+
+void MainWindow::on_actionAssemble_triggered()
+{
+    QProcess *process = new QProcess;
+    process->start("laser", QStringList() << "-a" << currentFile);
+    process->waitForFinished();
+    delete process;
+}
+
+
+void MainWindow::toggleDarkMode(bool state)
+{
     QPalette p = textTest->palette();
-    // Enable dark mode
-    if (ui->actionDark_Mode->isChecked())
+    if (state)
     {
-        p.setColor(QPalette::Base, Qt::black);
-        p.setColor(QPalette::Text, Qt::red);
+        //enable dark mode
+        p.setColor(QPalette::Base, QColor(29, 29, 38));
+        p.setColor(QPalette::Text, Qt::white);
         textTest->setPalette(p);
     }
     else
     {
-        p.setColor(QPalette::Base, Qt::white);
+        //disable dark mode
+        p.setColor(QPalette::Base, QColor(247, 235, 235));
         p.setColor(QPalette::Text, Qt::black);
         textTest->setPalette(p);
     }
 }
 
 
-void MainWindow::on_actionPreferences_triggered()
+void MainWindow::commentShortcut()
 {
-    Prefs = new Preferences(this);
-    Prefs->show();
+    QTextCursor cursor = textTest->textCursor();    //current cursor position
+    cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+    QTextDocument* doc = textTest->document();
+    QTextBlock tb = doc->findBlockByLineNumber(cursor.blockNumber());
+    qDebug() << tb.text().startsWith(";");
+    if (tb.text().startsWith(";"))
+    {
+        cursor.deleteChar();
+    }
+    else
+    {
+        cursor.insertText(";");
+    }
+    qDebug() << cursor.blockNumber();
 }
 
-void MainWindow::on_actionAssemble_triggered()
+
+void MainWindow::on_actionAbout_triggered()
 {
-//    QDesktopServices::openUrl(QUrl("file:///D:/Steam/steam.exe",
-//                                   QUrl::TolerantMode));
-//    QProcess process;
-//    process.setWorkingDirectory("C:/Windows/System32");
-//    process.start("cmd", QStringList() << "laser -a" + currentFile);
-//    process.start("C:/Windows/System32/cmd.exe");
-    QProcess *process = new QProcess;
-    process->start("laser", QStringList() << "-a" << currentFile);
-    process->waitForFinished();
-    delete process;
+    about = new About(this);
+    about->setModal(true);
+    about->show();
 }
+
+
+void MainWindow::changeFontSize(int size, QString fontType)
+{
+    qDebug() <<"received" ;
+    font = textTest->font();
+    font.setPointSize(size);
+    font.setFamily(fontType);
+    font.setStyleHint(QFont::Monospace);
+    font.setWeight(QFont::Medium);
+    textTest->setFont(font);
+}
+

@@ -23,6 +23,8 @@
 #include "include/preferences.h"
 #include "include/textbox.h"
 #include "include/codeeditor.h"
+#include "include/highlighter.h"
+#include "include/about.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -39,6 +41,10 @@ public:
     /* Comment line using Ctrl + / shortcut */
     void commentShortcut();
 
+    void toggleDarkMode(bool state);
+
+signals:
+    void backgroundChanged();
 
 public slots:
 
@@ -70,16 +76,25 @@ private slots:
 
     void closeEvent(QCloseEvent *event);
 
+    void on_actionAbout_triggered();
+
+    void changeFontSize(int size, QString fontType);
+
 private:
     Ui::MainWindow *ui;
     QString currentFile = "";
-    Preferences* Prefs;
     QShortcut *comment;
     QShortcut *untab;
     QFont font;
     textbox* text;
     QMessageBox msgBox;
     CodeEditor* textTest;
+    Highlighter *highlighter;
+    QString appName;
+    About* about;
+    Preferences* pref;
 };
+
+extern bool darkModeState;
 
 #endif // MAINWINDOW_H

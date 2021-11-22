@@ -20,10 +20,11 @@ public:
 protected:
     void resizeEvent(QResizeEvent *event) override;
 
+public slots:
+    void highlightCurrentLine();
+
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
-
-    void highlightCurrentLine();
 
     void updateLineNumberArea(const QRect &rect, int dy);
 
@@ -35,19 +36,13 @@ private:
 class LineNumberArea : public QWidget
 {
 public:
-    LineNumberArea(CodeEditor *editor) : QWidget(editor), codeEditor(editor)
-    {}
+    LineNumberArea(CodeEditor *parent = nullptr);
 
-    QSize sizeHint() const override
-    {
-        return QSize(codeEditor->lineNumberAreaWidth(), 0);
-    }
+    QSize sizeHint() const override;
+
 
 protected:
-    void paintEvent(QPaintEvent *event) override
-    {
-        codeEditor->lineNumberAreaPaintEvent(event);
-    }
+    void paintEvent(QPaintEvent *event) override;
 
 private:
     CodeEditor *codeEditor;
