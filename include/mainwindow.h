@@ -81,6 +81,7 @@ private slots:
     void changeFontSize(int size, QString fontType);
 
 private:
+    void setupMenuBar(bool state);
     Ui::MainWindow *ui;
     QString currentFile = "";
     QShortcut *comment;

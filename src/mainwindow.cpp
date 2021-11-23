@@ -38,8 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
     font.setWeight(QFont::Medium);
     textTest->setFont(font);
 
-    //Temporarily disable assembler when no file is present
-    ui->actionAssemble->setDisabled(true);
+    //Temporarily disable some features when no file is present
+    setupMenuBar(true);
 }
 
 
@@ -51,8 +51,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    msgBox.setText("The document has been modified.");
-    msgBox.setInformativeText("Do you want to save your changes?");
+    msgBox.setText("Save changes?");
     msgBox.setStandardButtons(QMessageBox::Save |
                               QMessageBox::Discard | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Save);
@@ -62,21 +61,21 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
         switch (ret)
         {
-          case QMessageBox::Save:
-            //Save was clicked
-              MainWindow::on_actionSave_As_triggered();
-              break;
-          case QMessageBox::Discard:
-            //Don't Save was clicked
+            case QMessageBox::Save:
+                //Save was clicked
+                MainWindow::on_actionSave_triggered();
+                break;
+            case QMessageBox::Discard:
+                //Don't Save was clicked
                 event->accept();
-              break;
-          case QMessageBox::Cancel:
-            //Cancel was clicked
+                break;
+            case QMessageBox::Cancel:
+                //Cancel was clicked
                 event->ignore();
-              break;
-          default:
-            // should never be reached
-              break;
+                break;
+            default:
+                // should never be reached
+                break;
         }
     }
 }
@@ -92,18 +91,50 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::on_actionNew_triggered()
 {
+    msgBox.setText("Save changes?");
+    msgBox.setStandardButtons(QMessageBox::Save |
+                              QMessageBox::Discard | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Save);
+    if (textTest->document()->isModified() == true)
+    {
+        int ret = msgBox.exec();
+        switch (ret)
+        {
+            default:
+                // should never be reached
+                break;
+            case QMessageBox::Cancel:
+                //Cancel was clicked
+                return;
+            case QMessageBox::Save:
+                //Save was clicked
+                MainWindow::on_actionSave_As_triggered();
+                break;
+            case QMessageBox::Discard:
+                //Don't Save was clicked
+                break;
+        }
+    }
     currentFile.clear();
+    setWindowTitle(appName + " - Untitled");
+    setupMenuBar(false);
     textTest->document()->setPlainText(QString());
+    textTest->document()->setModified(false);
 }
 
 
 void MainWindow::on_actionOpen_triggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Open A File...","",
-                                                    ".asm files (*.asm)");
+    QString fileName = QFileDialog::getOpenFileName(this, "Open A File...",
+                                                    "", ".asm files (*.asm)");
+    //if Cancel is pressed, no file is opened, do nothing
+    if (fileName == "")
+    {
+        return;
+    }
+
     QFile file(fileName);
     currentFile = fileName;
-    qDebug() << currentFile;
     if (!file.open(QIODevice::ReadOnly | QFile::Text))
     {
         QMessageBox::warning(this, "Warning",
@@ -115,7 +146,7 @@ void MainWindow::on_actionOpen_triggered()
     QTextStream in(&file);
     QString text = in.readAll();
     textTest->document()->setPlainText(text);
-    ui->actionAssemble->setDisabled(true);  //Re-enable assembler
+    setupMenuBar(false);
     textTest->document()->setModified(false);
     file.close();
 }
@@ -153,7 +184,13 @@ void MainWindow::on_actionSave_triggered()
 
 void MainWindow::on_actionSave_As_triggered()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, "Save As");
+    QString fileName = QFileDialog::getSaveFileName(this, "Save As",
+                                                    "*.asm", ".asm files (*.asm)");
+    if (fileName == "")
+    {
+        return;
+    }
+
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QFile::Text))
     {
@@ -165,8 +202,8 @@ void MainWindow::on_actionSave_As_triggered()
     setWindowTitle(fileName);
     QTextStream out(&file);
     QString text = textTest->toPlainText();
-    out << text;
     textTest->document()->setModified(false);
+    out << text;
     file.close();
 }
 
@@ -283,3 +320,11 @@ void MainWindow::changeFontSize(int size, QString fontType)
     textTest->setFont(font);
 }
 
+void MainWindow::setupMenuBar(bool state)
+{
+    ui->actionAssemble->setDisabled(state);
+    ui->actionCopy->setDisabled(state);
+    ui->actionCut->setDisabled(state);
+    ui->actionUndo->setDisabled(state);
+    ui->actionRedo->setDisabled(state);
+}
